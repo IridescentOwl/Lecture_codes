@@ -1,0 +1,23 @@
+clc 
+clear all 
+
+syms x1 x2 
+f = x1 - x2 + 2*x1^2 + 2*x1*x2 + x2^2
+G = gradient(f)
+H = hessian(f)
+X0 = [0 ; 0]
+fx = inline(f)
+Gx = inline(G)
+Hx = inline(H)
+fX = @(X) fx(X(1),X(2))
+GX = @(X) Gx(X(1),X(2))
+for i = 1:100
+S = -GX(X0)
+L = (S' * S)/(S' * H * S)
+X1 = X0 + L * S
+if norm(GX(X1 )) < 10^-2
+    break 
+end
+X0 = X1
+end
+double(fX(X1))

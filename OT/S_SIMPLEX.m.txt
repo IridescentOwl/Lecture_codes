@@ -1,0 +1,68 @@
+clc 
+clear all 
+A = [3 1 1 0 ; 1 2 0 1]
+B = [ 7 ; 12]
+C = [ -3 4 0 0]
+nv = 2 
+BV = nv+1: size(A,2)
+A = [A B]
+C = [C 0]
+ZC = C(BV)*A - C
+simplex_table = [A; ZC]
+array2table(simplex_table,'VariableNames',{'x1','x2','s1','s2','sol'},'RowNames',{'BV1','BV2','Zj - Cj'})
+run = true
+while run
+Zjcj = ZC(1:end-1)
+if any(Zjcj < 0)
+[minZC pvtcol]= min(Zjcj)
+sol = A(:,end)
+col = A(:, pvtcol)
+for i = 1: size(A,1)
+    if col(i)> 0 
+        ratio(i) = sol(i)/col(i)
+    else 
+        ratio(i) = inf
+    end
+end
+[minr pvtrow] = min(ratio)
+BV(pvtrow) = pvtcol 
+pvtkey = A(pvtrow,pvtcol)
+A(pvtrow,:) = A(pvtrow,:)/pvtkey
+for i = 1 : size(A,1)
+    if i ~= pvtrow 
+    A(i,:) = A(i,:) - A(i,pvtcol) * A(pvtrow,:)
+    end
+end
+ZC = C(BV)*A - C
+next_simplex_table = [A; ZC]
+array2table(next_simplex_table,'VariableNames',{'x1','x2','s1','s2','sol'},'RowNames',{'BV1','BV2','Zj - Cj'})
+else 
+    fprintf('Final Optimal Table has been obtained and optimal value is %f ', ZC(end))
+run = false;
+end
+end
+
+
+clc 
+clear all 
+
+syms x1 x2 
+f = x1 - x2 + 2*x1^2 + 2*x1*x2 + x2^2
+G = gradient(f)
+H = hessian(f)
+X0 = [0 ; 0]
+fx = inline(f)
+Gx = inline(G)
+Hx = inline(H)
+fX = @(X) fx(X(1),X(2))
+GX = @(X) Gx(X(1),X(2))
+for i = 1:100
+S = -GX(X0)
+L = (S' * S)/(S' * H * S)
+X1 = X0 + L * S
+if norm(GX(X1 )) < 10^-2
+    break 
+end
+X0 = X1
+end
+double(fX(X1))

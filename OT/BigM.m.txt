@@ -1,0 +1,59 @@
+clc
+clear all
+M = 1000
+A = [4 3 -1 0 1; 1 2 0 1 0]
+B = [6; 3]
+C = [2 1 0 0 -M]
+BV = [5 4]
+A = [A B]
+C = [C 0]
+ZC = (C(BV)*A)-C
+big_m_table = [A; ZC]
+array2table(big_m_table,'VariableNames',{'x1','x2','s1','s2','a1','sol'},'RowNames',{'BV1','BV2','Zj - Cj'})
+run = true
+while run
+Zjcj = ZC(1:end-1)
+if any(Zjcj < 0)
+[minZC pvtcol]= min(Zjcj)
+sol = A(:,end)
+col = A(:, pvtcol)
+for i = 1: size(A,1)
+    if col(i)> 0 
+        ratio(i) = sol(i)/col(i)
+    else 
+        ratio(i) = inf
+    end
+end
+[minr pvtrow] = min(ratio)
+BV(pvtrow) = pvtcol 
+pvtkey = A(pvtrow,pvtcol)
+A(pvtrow,:) = A(pvtrow,:)/pvtkey
+for i = 1 : size(A,1)
+    if i ~= pvtrow 
+    A(i,:) = A(i,:) - A(i,pvtcol) * A(pvtrow,:)
+    end
+end
+ZC = C(BV)*A - C
+next_big_m_table = [A; ZC]
+array2table(next_big_m_table,'VariableNames',{'x1','x2','s1','s2','a1','sol'},'RowNames',{'BV1','BV2','Zj - Cj'})
+else 
+    av= [5]
+    infeasible = false;
+    for i = 1:length(BV)
+        if ismember(BV(i),av)
+            if A(i,end) > 0 
+                infeasible = true;
+            end
+        end
+    end
+
+    if infeasible
+        fprintf('The problem is infeasible because artificial variable is still in the basis. \n');
+    else
+    fprintf('Final Optimal Table has been obtained and optimal value is %f ', ZC(end))
+    end
+run = false;
+
+end
+end
+
